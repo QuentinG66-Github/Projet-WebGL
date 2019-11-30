@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Projet WebGL 2019 - Université de Limoges</title>
+		
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+
+	<body>
+		<div id="info">
+			Projet WebGL 2019 - Université de Limoges
+		</div>
+
+		<script type="module">
+
+				import * as THREE from './threejs/three.module.js';
+				import { OBJLoader } from './threejs/OBJLoader.js';
+				import { TrackballControls } from './threejs/TrackballControls.js';
+	
+				var container;
+
+				var camera, scene, renderer, controls;
+	
+				var windowHalfX = window.innerWidth / 2;
+				var windowHalfY = window.innerHeight / 2;
+	
+				var object;
+
+
+
+				init();
+				animate();	
+	
+				function init() {
+	
+					container = document.createElement( 'div' );
+					document.body.appendChild( container );
+	
+					// scene
+					scene = new THREE.Scene();
+
+					// creation renderer	
+					renderer = new THREE.WebGLRenderer();
+					renderer.setPixelRatio( window.devicePixelRatio );
+					renderer.setSize( window.innerWidth, window.innerHeight );
+					renderer.setClearColor (0xAAAAAA, 1);
+					container.appendChild( renderer.domElement );
+
+					// camera
+					camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
+					camera.position.z = 400;
+					camera.position.y = -500;
+					
+					camera.lookAt( 0, 0, 0 );	
+					scene.add( camera );
+	
+					// controle sur la camera, type trackball
+					controls = new TrackballControls( camera, renderer.domElement );
+
+					// lights
+					var light = new THREE.PointLight( 0xFFFFFF, 1.0 );
+					light.position.set( 0, 500, 500 );
+					scene.add( light );
+
+					var material = new THREE.MeshNormalMaterial();
+
+
+
+					var rail1,rail2,terrain,locomotive;
+
+					//tiré de : https://blender.stackovernet.com/fr/q/17210
+					var textureLoader = new THREE.TextureLoader();
+					var map = textureLoader.load('data/textures/Terrain/diffuse.png');
+					var material1 = new THREE.MeshPhongMaterial({map: map});
+
+
+					
+					function loadModel() {	
+						terrain.traverse( function ( child ) {	
+							if ( child.isMesh ) 
+							child.material = material1;
+	
+						} );
+	
+						scene.add( terrain );	
+					}
+	
+					// LoadingManager
+					var manager = new THREE.LoadingManager( loadModel );
+					manager.onProgress = function ( item, loaded, total ) {
+						console.log( "Load:", item, "(", loaded, "/", total, ")" );
+					};
+
+					// OBJLoader	
+					var objLoader = new OBJLoader( manager );
+					objLoader.onError = function() {
+						console.log( "Error OBJLoader" );
+					}
+					
+					objLoader.load( 'data/models/TerrainLod4.obj', function ( obj ) {
+						terrain = obj;	
+					});
+					
+					
+					var rails1 = new Array();
+					var rails2 = new Array();
+
+					objLoader.load( 'data/models/rail1.obj', function ( obj ) {
+						rail1 = obj;
+						rail1.traverse(function(child){
+							if(child.isMesh){
+								for(var i = 0; i<18 ; i++)
+								{
+									rails1[i] = new THREE.Mesh(child.geometry, material);
+									rails1[i].rotateX(90.0*2.0*Math.PI/360.0);
+									rails1[i].scale.set(0.1,0.1,0.1);
+									rails1[i].translateX(-100.0);
+									rails1[i].translateZ(100.0+i*31.0);	
+									rails1[i].translateY(10.0);
+
+
+									scene.add( rails1[i] );
+									
+								}
+								var j = 0;
+								for(var i=18; i<39; i++)
+								{
+									rails1[i] = new THREE.Mesh(child.geometry, material);
+									rails1[i].rotateX(90.0*2.0*Math.PI/360.0);
+									rails1[i].rotateY(90.0*2.0*Math.PI/360.0);
+									rails1[i].scale.set(0.1,0.1,0.1);
+									rails1[i].translateX(-54.0);
+									rails1[i].translateZ(-54.5+j*31.0);	
+									rails1[i].translateY(10.0);
+
+
+									scene.add( rails1[i] );
+									j++;
+								}
+							}
+						})
+					});
+
+					
+
+
+					objLoader.load( 'data/models/rail2.obj', function ( obj ) {
+						rail2 = obj;
+						rail2.traverse(function(child){
+							if(child.isMesh){
+								
+									rails2[0] = new THREE.Mesh(child.geometry, material);
+									rails2[0].rotateX(90.0*2.0*Math.PI/360.0);
+									rails2[0].rotateY(90.0*2.0*Math.PI/360.0);
+									rails2[0].scale.set(0.1,0.1,0.1);
+									rails2[0].translateX(-54.0);
+									rails2[0].translateZ(-53.5);	
+									rails2[0].translateY(10.0);
+
+
+									scene.add( rails2[0] );
+
+									rails2[1] = new THREE.Mesh(child.geometry, material);
+									rails2[1].rotateX(90.0*2.0*Math.PI/360.0);
+									rails2[1].scale.set(0.1,0.1,0.1);
+									rails2[1].translateX(20*31.0-8);
+									rails2[1].translateZ(101.0);	
+									rails2[1].translateY(10.0);
+
+
+									scene.add( rails2[1] );
+									
+								
+							}
+						})
+						
+					});
+
+
+					objLoader.load( 'data/models/Locomotive.obj', function ( obj ) {
+						locomotive = obj;
+						
+						locomotive.rotateX(90.0*2.0*Math.PI/360.0);
+						locomotive.scale.set(0.3,0.3,0.3);
+						locomotive.translateX(-100.0);
+						locomotive.translateZ(100.0);	
+						locomotive.translateY(10.0);
+						locomotive.traverse( function ( child ) {	
+							if ( child.isMesh ) 
+							child.material = material;
+	
+						} );
+						
+						
+						scene.add( locomotive );	
+					});
+
+					var tree1;
+					objLoader.load( 'Tree1/Tree1.obj', function ( obj ) {
+						tree1 = obj;
+						
+						tree1.rotateX(90.0*2.0*Math.PI/360.0);
+						tree1.scale.set(5,5,5);
+						tree1.translateX(-100.0);
+						tree1.translateZ(100.0);	
+						tree1.translateY(10.0);
+						tree1.traverse( function ( child ) {	
+							if ( child.isMesh ) 
+							child.material = materialT;
+	
+						} );
+						
+						
+						scene.add( tree1 );	
+					});
+
+					var textureLoaderT = new MTLLoader();
+					var mapT = textureLoaderT.load('Tree1/Tree1.mtl');
+					var materialT = new THREE.MeshPhongMaterial({map: mapT});
+
+
+
+
+
+					// gestion redimensionnement fenetre
+					window.addEventListener( 'resize', onWindowResize, false );
+				}
+	
+				// gestion redimensionnement fenetre
+				function onWindowResize() {
+	
+					windowHalfX = window.innerWidth / 2;
+					windowHalfY = window.innerHeight / 2;
+	
+					camera.aspect = window.innerWidth / window.innerHeight;
+					camera.updateProjectionMatrix();
+	
+					renderer.setSize( window.innerWidth, window.innerHeight );
+				}
+		
+				function animate() {	
+					controls.update();
+					render();
+					requestAnimationFrame( animate );	
+				}
+	
+				function render() {
+					renderer.render( scene, camera );
+				}
+	
+			</script>
+</body></html>
